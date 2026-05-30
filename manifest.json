@@ -2,7 +2,7 @@
   "name": "达棋",
   "short_name": "达棋",
   "description": "双人对战与人机对战达棋小游戏",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#1a1a2e",
