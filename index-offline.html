@@ -31,28 +31,6 @@ h1 { margin-bottom: 2px; font-size: 28px; color: #e0c068; letter-spacing: 4px; }
 .mode-btn:hover { border-color: #888; color: #ccc; }
 .mode-btn.active { background: #e0c068; color: #1a1a2e; border-color: #e0c068; }
 .mode-btn.pve-active { background: #4a90d9; color: #fff; border-color: #4a90d9; }
-.mode-btn.online-active { background: #27ae60; color: #fff; border-color: #27ae60; }
-
-/* ====== 房间面板 ====== */
-.room-panel { margin-bottom: 10px; padding: 12px 16px; background: rgba(18,22,40,0.8); border-radius: 10px; border: 1px solid #2a2a3a; }
-.room-panel.hidden { display: none; }
-.room-id { font-size: 28px; font-weight: bold; color: #e0c068; letter-spacing: 6px; font-family: 'Consolas', monospace; padding: 2px 12px; background: #0a0a16; border-radius: 6px; display: inline-block; }
-.room-waiting { color: #889; font-size: 13px; margin-top: 4px; }
-.player-badge { display: inline-block; padding: 3px 12px; border-radius: 12px; font-size: 13px; font-weight: bold; margin: 4px; }
-.player-badge.B { background: #333; color: #ddd; border: 1px solid #555; }
-.player-badge.W { background: #555; color: #fff; border: 1px solid #888; }
-.room-hint { color: #667; font-size: 11px; margin-top: 6px; }
-.room-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; align-items: center; margin-top: 6px; }
-.room-btn { padding: 7px 16px; font-size: 13px; border-radius: 18px; border: 1px solid #555; cursor: pointer; font-weight: bold; letter-spacing: 1px; background: rgba(30,30,50,0.8); color: #ccc; transition: all 0.15s; }
-.room-btn.primary { background: #27ae60; color: #fff; border-color: #27ae60; }
-.room-btn.danger { background: #c0392b; color: #fff; border-color: #c0392b; }
-.room-btn:hover { filter: brightness(1.15); }
-.room-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.room-input { padding: 7px 12px; font-size: 16px; border-radius: 8px; border: 1px solid #555; background: #0a0a16; color: #fff; width: 80px; text-align: center; letter-spacing: 4px; font-family: 'Consolas', monospace; text-transform: uppercase; }
-.conn-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
-.conn-dot.connecting { background: #f80; }
-.conn-dot.online { background: #4f4; }
-.conn-dot.offline { background: #f44; }
 
 /* ====== PvE设置 ====== */
 .pve-settings { margin-bottom: 10px; padding: 10px 16px; background: rgba(18,22,40,0.7); border-radius: 10px; border: 1px solid #2a2a3a; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; align-items: center; }
@@ -178,7 +156,6 @@ h1 { margin-bottom: 2px; font-size: 28px; color: #e0c068; letter-spacing: 4px; }
     <div class="mode-bar">
       <button class="mode-btn active" id="btnPvP" onclick="setMode('pvp')">👥 双人对战</button>
       <button class="mode-btn" id="btnPvE" onclick="setMode('pve')">🤖 人机对战</button>
-      <button class="mode-btn" id="btnOnline" onclick="setMode('online')">🌐 联机对战</button>
     </div>
 
     <!-- 人机设置 -->
@@ -192,29 +169,6 @@ h1 { margin-bottom: 2px; font-size: 28px; color: #e0c068; letter-spacing: 4px; }
         <span class="setting-label">📊 难度：</span>
         <button class="setting-btn" id="btnNormal" onclick="setDifficulty('normal')">普通</button>
         <button class="setting-btn active danger-active" id="btnHard" onclick="setDifficulty('hard')">困难</button>
-      </div>
-    </div>
-
-    <!-- 房间面板 -->
-    <div class="room-panel hidden" id="roomPanel">
-      <div id="roomLobby">
-        <div style="font-size:15px;color:#ccc;margin-bottom:6px;">🌐 P2P 联机对战</div>
-        <div class="room-btns">
-          <button class="room-btn primary" id="btnCreateRoom" onclick="createRoom()">🏠 创建房间</button>
-          <span style="color:#666;">或</span>
-          <input class="room-input" id="joinInput" placeholder="房间号" maxlength="6" oninput="this.value=this.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase()">
-          <button class="room-btn" id="btnJoinRoom" onclick="joinRoom()">🚪 加入</button>
-        </div>
-        <div style="margin-top:4px;"><span class="conn-dot offline" id="connDot"></span><span id="connLabel" style="font-size:11px;color:#888;">等待操作…</span></div>
-      </div>
-      <div id="roomInfo" style="display:none;">
-        <div style="color:#ccc;font-size:14px;">房间号</div>
-        <div class="room-id" id="roomIdDisplay">------</div>
-        <div class="room-waiting" id="roomWaiting">等待对手加入…</div>
-        <div id="roomPlayers" style="margin-top:4px;"></div>
-        <div class="room-btns">
-          <button class="room-btn danger" onclick="leaveRoom()">退出房间</button>
-        </div>
       </div>
     </div>
 
@@ -252,7 +206,6 @@ h1 { margin-bottom: 2px; font-size: 28px; color: #e0c068; letter-spacing: 4px; }
     <div class="btn-row">
       <button class="btn btn-reset" onclick="resetGame()">↺ 重开</button>
       <button class="btn btn-undo" id="btnUndo" onclick="undo()">↩ 悔棋</button>
-      <button class="btn btn-rematch" id="btnRematch" onclick="requestRematch()" style="display:none;">🔄 再来一局</button>
     </div>
 
     <div id="debugStatus" style="margin-top:6px;font-size:11px;color:#f80;font-family:monospace;min-height:16px;"></div>
@@ -314,18 +267,11 @@ h1 { margin-bottom: 2px; font-size: 28px; color: #e0c068; letter-spacing: 4px; }
 <script>
 // ==================== 游戏状态 ====================
 let board, currentPlayer, status, selectedCell, lastFrom, lastTo;
-let gameMode = 'pvp';       // 'pvp' | 'pve' | 'online'
+let gameMode = 'pvp';       // 'pvp' | 'pve'
 let playerColor = 'B';      // PvE中玩家的颜色
 let aiDifficulty = 'hard';  // 'normal' | 'hard'
 let aiThinking = false;
 let moveHistory = [];       // [{board, currentPlayer, status, lastFrom, lastTo}]
-
-// 联机模式
-let peer = null;            // PeerJS instance
-let conn = null;            // DataConnection
-let onlineColor = null;     // 联机中我是黑(B)还是白(W)
-let roomCode = null;        // 房间号
-let peerReady = false;
 
 // ==================== 视角变换 ====================
 // 当人机对战 + 玩家选先手(黑方)时，棋盘翻转180°让黑方在下方
@@ -338,220 +284,6 @@ function toBoard(sx, sy) {
 // toBoard 翻转的逆仍是自身，board→screen 也用同一个函数
 function toScreen(bx, by) {
   return toBoard(bx, by);
-}
-
-// ==================== 联机对战 (PeerJS WebRTC) ====================
-
-function loadPeerJS(cb) {
-  if (window.Peer) { cb(); return; }
-  document.getElementById('connLabel').textContent = '加载联机模块…';
-  var s = document.createElement('script');
-  s.src = 'https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js';
-  s.onload = function() { cb(); };
-  s.onerror = function() {
-    document.getElementById('connLabel').textContent = '加载失败，请检查网络后刷新';
-  };
-  document.head.appendChild(s);
-}
-
-function createRoom() {
-  loadPeerJS(function() {
-    roomCode = genRoomCode();
-    document.getElementById('roomIdDisplay').textContent = roomCode;
-    document.getElementById('roomLobby').style.display = 'none';
-    document.getElementById('roomInfo').style.display = 'block';
-    document.getElementById('roomWaiting').textContent = '等待对手加入…';
-    document.getElementById('roomPlayers').innerHTML = '<span class="player-badge B">⚫ 黑方（你·房主）</span>';
-    onlineColor = 'B';
-    setupPeer('host');
-    updateConnUI('connecting', '等待对手连接…');
-  });
-}
-
-function joinRoom() {
-  var code = document.getElementById('joinInput').value.trim().toUpperCase();
-  if (code.length !== 6) { updateConnUI('offline', '请输入6位房间号'); return; }
-  roomCode = code;
-  loadPeerJS(function() {
-    document.getElementById('roomIdDisplay').textContent = roomCode;
-    document.getElementById('roomLobby').style.display = 'none';
-    document.getElementById('roomInfo').style.display = 'block';
-    document.getElementById('roomWaiting').textContent = '正在连接到房主…';
-    document.getElementById('roomPlayers').innerHTML = '<span class="player-badge W">⚪ 白方（你·加入者）</span>';
-    onlineColor = 'W';
-    setupPeer('guest');
-    updateConnUI('connecting', '正在连接…');
-  });
-}
-
-function genRoomCode() {
-  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  var code = '';
-  for (var i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
-
-function setupPeer(role) {
-  var peerId = 'dchess-' + roomCode + '-' + role;
-  try {
-    peer = new Peer(peerId, {
-      debug: 0
-    });
-  } catch (e) {
-    updateConnUI('offline', '浏览器不支持联机功能');
-    return;
-  }
-
-  peer.on('open', function() {
-    peerReady = true;
-    if (role === 'guest') {
-      // 加入方主动连接房主
-      var hostId = 'dchess-' + roomCode + '-host';
-      conn = peer.connect(hostId, { reliable: true });
-      setupConnection();
-      updateConnUI('connecting', '连接房主中…');
-    }
-  });
-
-  peer.on('connection', function(incoming) {
-    // 房主收到连接
-    if (!conn) {
-      conn = incoming;
-      setupConnection();
-      updateConnUI('online', '对手已连接！');
-      document.getElementById('roomWaiting').textContent = '';
-      document.getElementById('roomPlayers').innerHTML =
-        '<span class="player-badge B">⚫ 黑方（房主）</span>' +
-        '<span class="player-badge W">⚪ 白方（加入者）</span>';
-      startOnlineGame();
-    }
-  });
-
-  peer.on('error', function(err) {
-    updateConnUI('offline', '连接错误: ' + err.type);
-  });
-
-  peer.on('disconnected', function() {
-    updateConnUI('offline', '连接断开');
-  });
-}
-
-function setupConnection() {
-  conn.on('open', function() {
-    updateConnUI('online', '对手已连接！');
-    document.getElementById('roomWaiting').textContent = '';
-    document.getElementById('roomPlayers').innerHTML =
-      '<span class="player-badge B">⚫ 黑方（房主）</span>' +
-      '<span class="player-badge W">⚪ 白方（加入者）</span>';
-    if (onlineColor === 'B') startOnlineGame();
-  });
-
-  conn.on('data', function(data) {
-    handleOnlineMsg(data);
-  });
-
-  conn.on('close', function() {
-    if (gameMode === 'online' && status === 'playing') {
-      // 对手断开，我方获胜
-      status = onlineColor === 'B' ? 'B_wins' : 'W_wins';
-      updateUI();
-      updateConnUI('offline', '对手断开连接，你赢了！');
-    } else if (gameMode === 'online') {
-      updateConnUI('offline', '对手断开连接');
-    }
-  });
-
-  conn.on('error', function() {
-    updateConnUI('offline', '连接出错');
-  });
-}
-
-function sendOnline(obj) {
-  if (conn && conn.open) {
-    try { conn.send(obj); } catch(e) {}
-  }
-}
-
-function handleOnlineMsg(msg) {
-  switch (msg.type) {
-    case 'move':
-      // 收到对手走棋
-      board = msg.board;
-      currentPlayer = msg.currentPlayer;
-      status = msg.status;
-      lastFrom = msg.from ? { x: msg.from[0], y: msg.from[1] } : null;
-      lastTo = msg.to ? { x: msg.to[0], y: msg.to[1] } : null;
-      selectedCell = null;
-      if (msg.captured && msg.captured.length) flashCaptured(msg.captured);
-      renderBoard();
-      updateUI();
-      break;
-
-    case 'rematch':
-      onlineColor = msg.color;
-      document.getElementById('roomPlayers').innerHTML =
-        '<span class="player-badge B">⚫ 黑方' + (onlineColor === 'B' ? '（你）' : '') + '</span>' +
-        '<span class="player-badge W">⚪ 白方' + (onlineColor === 'W' ? '（你）' : '') + '</span>';
-      freshOnlineGame();
-      break;
-
-    case 'chat':
-      break;
-  }
-}
-
-function startOnlineGame() {
-  playerColor = onlineColor;
-  freshOnlineGame();
-  // 房主发送开局信号
-  if (onlineColor === 'B') {
-    sendOnline({ type: 'rematch', color: onlineColor });
-  }
-}
-
-function freshOnlineGame() {
-  board = initBoard();
-  currentPlayer = 'B';
-  status = 'playing';
-  selectedCell = null;
-  lastFrom = null;
-  lastTo = null;
-  moveHistory = [];
-  aiThinking = false;
-  document.getElementById('winOverlay').classList.remove('show');
-  renderBoard();
-  updateUI();
-}
-
-function leaveRoom() {
-  if (conn) { try { conn.close(); } catch(e) {} }
-  if (peer) { try { peer.destroy(); } catch(e) {} }
-  conn = null;
-  peer = null;
-  peerReady = false;
-  roomCode = null;
-  onlineColor = null;
-  document.getElementById('roomLobby').style.display = 'block';
-  document.getElementById('roomInfo').style.display = 'none';
-  document.getElementById('joinInput').value = '';
-  updateConnUI('offline', '等待操作…');
-  setMode('pvp');
-}
-
-function updateConnUI(state, label) {
-  var dot = document.getElementById('connDot');
-  dot.className = 'conn-dot ' + state;
-  document.getElementById('connLabel').textContent = label || '';
-}
-
-function requestRematch() {
-  if (gameMode !== 'online' || !conn || !conn.open) return;
-  document.getElementById('btnRematch').style.display = 'none';
-  // 交换颜色
-  onlineColor = onlineColor === 'B' ? 'W' : 'B';
-  playerColor = onlineColor;
-  sendOnline({ type: 'rematch', color: onlineColor === 'B' ? 'W' : 'B' });
-  freshOnlineGame();
 }
 
 // ==================== 棋盘逻辑 ====================
@@ -965,8 +697,6 @@ function updateUI() {
   const zl = document.getElementById('zoneLabel');
   if (gameMode === 'pve' && playerColor === 'B') {
     zl.innerHTML = '<span class="white-zone">白方阵地 ▲</span><span class="black-zone">▼ 黑方阵地</span>';
-  } else if (gameMode === 'online') {
-    zl.innerHTML = '<span class="black-zone">▲ 黑方（房主）</span><span class="white-zone">白方（加入者） ▼</span>';
   } else {
     zl.innerHTML = '<span class="black-zone">▲ 黑方阵地</span><span class="white-zone">白方阵地 ▼</span>';
   }
@@ -985,17 +715,15 @@ function updateUI() {
     if (currentPlayer === 'B') sb.classList.add('active');
     else sw.classList.add('active');
 
-    // PvE/联机模式：标记玩家颜色
-    if (gameMode === 'pve' || gameMode === 'online') {
+    // PvE模式：标记玩家颜色
+    if (gameMode === 'pve') {
       if (playerColor === 'B') sb.classList.add('you');
       else sw.classList.add('you');
     }
 
-    // 标记AI/对手
+    // 标记AI
     if (gameMode === 'pve' && currentPlayer !== playerColor) {
       aiBadge.innerHTML = '<span class="ai-badge">AI</span>';
-    } else if (gameMode === 'online' && currentPlayer !== playerColor) {
-      aiBadge.innerHTML = '<span class="ai-badge" style="background:#27ae60;">对手</span>';
     } else {
       aiBadge.innerHTML = '';
     }
@@ -1031,16 +759,10 @@ function updateUI() {
 function showWin(winner) {
   const name = winner === 'B' ? '黑方' : '白方';
   const cls = winner === 'B' ? 'B-win' : 'W-win';
-  var extra = '';
-  if (gameMode === 'pve' && winner !== playerColor) extra = ' (AI)';
-  if (gameMode === 'online') extra = winner === onlineColor ? ' (你)' : ' (对手)';
+  const aiWin = gameMode === 'pve' && winner !== playerColor ? ' (AI)' : '';
   document.getElementById('winDialog').innerHTML =
-    `<h2 class="${cls}">🏆 ${name}${extra}胜利！</h2><p>点击任意处关闭</p>`;
+    `<h2 class="${cls}">🏆 ${name}${aiWin}胜利！</h2><p>点击任意处关闭</p>`;
   document.getElementById('winOverlay').classList.add('show');
-  // 联机模式显示再来一局按钮
-  if (gameMode === 'online') {
-    document.getElementById('btnRematch').style.display = 'inline-block';
-  }
 }
 
 // ==================== 交互 ====================
@@ -1049,10 +771,8 @@ function onCellClick(bx, by) {
   if (status !== 'playing') return;
   if (aiThinking) return;
 
-  // PvE/联机模式：不是玩家回合不能动
-  if ((gameMode === 'pve' || gameMode === 'online') && currentPlayer !== playerColor) return;
-  // 联机模式需要对手已连接
-  if (gameMode === 'online' && (!conn || !conn.open)) return;
+  // PvE模式：不是玩家回合不能动
+  if (gameMode === 'pve' && currentPlayer !== playerColor) return;
 
   const piece = board[by][bx];
 
@@ -1071,21 +791,10 @@ function onCellClick(bx, by) {
         selectedCell = null;
         renderBoard();
         updateUI();
-        // PvE模式：AI自动走；联机模式：发送走棋给对手
+        // PvE模式：AI自动走
         if (gameMode === 'pve' && result.status === 'playing') {
           document.getElementById('debugStatus').textContent = 'player moved, triggering AI...';
           scheduleAiMove();
-        } else if (gameMode === 'online') {
-          document.getElementById('debugStatus').textContent = 'move sent to peer';
-          sendOnline({
-            type: 'move',
-            from: [sx, sy],
-            to: [bx, by],
-            board: result.board,
-            currentPlayer: result.currentPlayer,
-            status: result.status,
-            captured: result.captured
-          });
         } else if (gameMode === 'pve') {
           document.getElementById('debugStatus').textContent = 'game over, status=' + result.status;
         }
@@ -1202,21 +911,14 @@ function undo() {
 
 function setMode(mode) {
   if (aiThinking) return;
-  // 退出联机房间
-  if (gameMode === 'online' && mode !== 'online') {
-    leaveRoom();
-    return; // leaveRoom calls setMode('pvp') which resets
-  }
   gameMode = mode;
 
   document.getElementById('btnPvP').classList.toggle('active', mode === 'pvp');
   document.getElementById('btnPvE').classList.toggle('active', mode === 'pve');
   document.getElementById('btnPvE').classList.toggle('pve-active', mode === 'pve');
-  document.getElementById('btnOnline').classList.toggle('active', mode === 'online');
-  document.getElementById('btnOnline').classList.toggle('online-active', mode === 'online');
 
-  document.getElementById('pveSettings').classList.toggle('hidden', mode !== 'pve');
-  document.getElementById('roomPanel').classList.toggle('hidden', mode !== 'online');
+  const pveSettings = document.getElementById('pveSettings');
+  pveSettings.classList.toggle('hidden', mode !== 'pve');
 
   resetGame();
 }
@@ -1249,8 +951,6 @@ function resetGame() {
   aiThinking = false;
   document.getElementById('winOverlay').classList.remove('show');
   document.getElementById('thinkingIndicator').classList.remove('show');
-  document.getElementById('btnRematch').style.display = 'none';
-  document.getElementById('debugStatus').textContent = '';
   renderBoard();
   updateUI();
 
