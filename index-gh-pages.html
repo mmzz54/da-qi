@@ -113,9 +113,6 @@ h1 { margin-bottom: 2px; font-size: 28px; color: #e0c068; letter-spacing: 4px; }
 .btn-undo { background: #334; color: #aaa; border: 1px solid #555; }
 .btn-undo:hover { background: #445; color: #ddd; }
 .btn-undo:disabled { opacity: 0.4; cursor: not-allowed; }
-.btn-hint { background: #4a90d9; color: #fff; border: 1px solid #4a90d9; }
-.btn-hint:hover { background: #5aa0e9; }
-.btn-hint:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ====== AI思考指示 ====== */
 .thinking-indicator { display: none; margin-top: 6px; font-size: 13px; color: #e0c068; letter-spacing: 1px; }
@@ -255,7 +252,6 @@ h1 { margin-bottom: 2px; font-size: 28px; color: #e0c068; letter-spacing: 4px; }
     <div class="btn-row">
       <button class="btn btn-reset" onclick="resetGame()">↺ 重开</button>
       <button class="btn btn-undo" id="btnUndo" onclick="undo()">↩ 悔棋</button>
-      <button class="btn btn-hint" id="btnHint" onclick="showHint()" style="display:none;">💡 提示</button>
       <button class="btn btn-rematch" id="btnRematch" onclick="requestRematch()" style="display:none;">🔄 再来一局</button>
     </div>
 
@@ -323,7 +319,6 @@ let playerColor = 'B';      // PvE中玩家的颜色
 let aiDifficulty = 'hard';  // 'normal' | 'hard'
 let aiThinking = false;
 let moveHistory = [];       // [{board, currentPlayer, status, lastFrom, lastTo}]
-let positionCount = {};     // 棋局重复检测: {boardKey: count}
 
 // 联机模式
 let peer = null;            // PeerJS instance
@@ -531,7 +526,6 @@ function freshOnlineGame() {
   lastFrom = null;
   lastTo = null;
   moveHistory = [];
-  positionCount = {};
   aiThinking = false;
   document.getElementById('winOverlay').classList.remove('show');
   document.getElementById('btnRematch').style.display = 'none';
@@ -832,59 +826,6 @@ function getBestMove(aiColor) {
   return bestMove;
 }
 
-// ==================== 平局检测 ====================
-
-function boardKey() {
-  var s = '';
-  for (var y = 0; y < 4; y++)
-    for (var x = 0; x < 4; x++)
-      s += board[y][x] || '.';
-  return s;
-}
-
-function checkDraw() {
-  var key = boardKey();
-  positionCount[key] = (positionCount[key] || 0) + 1;
-  if (positionCount[key] >= 5) {
-    status = 'draw';
-    return true;
-  }
-  return false;
-}
-
-// ==================== 提示功能 ====================
-
-function showHint() {
-  if (gameMode !== 'pve' || aiThinking || status !== 'playing' || currentPlayer !== playerColor) return;
-  aiThinking = true;
-  updateUI();
-  renderBoard();
-  var savedDiff = aiDifficulty;
-  setTimeout(function() {
-    try {
-      aiDifficulty = 'hard'; // 提示始终用困难AI级别
-      var bestMove = getBestMove(currentPlayer);
-      aiDifficulty = savedDiff;
-      if (bestMove) {
-        executeMove(bestMove.from[0], bestMove.from[1], bestMove.to[0], bestMove.to[1]);
-        lastFrom = { x: bestMove.from[0], y: bestMove.from[1] };
-        lastTo = { x: bestMove.to[0], y: bestMove.to[1] };
-        selectedCell = null;
-        renderBoard();
-        updateUI();
-        if (status === 'playing') {
-          aiThinking = false;
-          scheduleAiMove();
-          return;
-        }
-      }
-    } catch(e) {}
-    aiThinking = false;
-    renderBoard();
-    updateUI();
-  }, 80);
-}
-
 // ==================== 执行移动 ====================
 
 function saveState() {
@@ -911,11 +852,6 @@ function executeMove(x1, y1, x2, y2) {
   const captured = getCaptures(x2, y2, currentPlayer);
   for (const [cx, cy] of captured) board[cy][cx] = null;
 
-  // 平局检测：五回合同一棋局
-  if (checkDraw()) {
-    return { board: deepCopyBoard(board), currentPlayer, status: 'draw', captured };
-  }
-
   const bc = countPieces('B'), wc = countPieces('W');
   if (wc <= 1) { status = 'B_wins'; return { board: deepCopyBoard(board), currentPlayer, status: 'B_wins', captured }; }
   if (bc <= 1) { status = 'W_wins'; return { board: deepCopyBoard(board), currentPlayer, status: 'W_wins', captured }; }
@@ -936,14 +872,6 @@ function executeAIMoveDirect(from, to) {
   board[y2][x2] = currentPlayer;
   const captured = getCaptures(x2, y2, currentPlayer);
   for (const [cx, cy] of captured) board[cy][cx] = null;
-
-  // 平局检测：五回合同一棋局
-  if (checkDraw()) {
-    status = 'draw';
-    lastFrom = { x: x1, y: y1 };
-    lastTo = { x: x2, y: y2 };
-    return captured;
-  }
 
   const bc = countPieces('B'), wc = countPieces('W');
   if (wc <= 1) { status = 'B_wins'; }
@@ -1097,10 +1025,6 @@ function updateUI() {
     pd.textContent = '🏆 白方胜'; pd.className = 'player-name W';
     aiBadge.innerHTML = '';
     showWin('W');
-  } else if (status === 'draw') {
-    pd.textContent = '🤝 平局'; pd.className = 'player-name';
-    aiBadge.innerHTML = '';
-    showDraw();
   }
 
   // 悔棋按钮状态
@@ -1113,12 +1037,6 @@ function updateUI() {
   }
   btnUndo.style.display = (gameMode === 'pve' || gameMode === 'pvp') ? 'inline-block' : 'none';
 
-  // 提示按钮（仅人机对战 + 玩家回合 + 游戏中 + AI未思考时显示）
-  var btnHint = document.getElementById('btnHint');
-  var canHint = gameMode === 'pve' && status === 'playing' && currentPlayer === playerColor && !aiThinking;
-  btnHint.style.display = canHint ? 'inline-block' : 'none';
-  btnHint.disabled = !canHint;
-
   // AI思考指示
   const thinkEl = document.getElementById('thinkingIndicator');
   if (aiThinking) {
@@ -1126,12 +1044,6 @@ function updateUI() {
   } else {
     thinkEl.classList.remove('show');
   }
-}
-
-function showDraw() {
-  document.getElementById('winDialog').innerHTML =
-    '<h2 style="color:#e0c068;">🤝 平局</h2><p>五回合同一棋局</p><p style="font-size:12px;">点击任意处关闭</p>';
-  document.getElementById('winOverlay').classList.add('show');
 }
 
 function showWin(winner) {
@@ -1294,7 +1206,6 @@ function undo() {
 
   // 隐藏胜利弹窗
   document.getElementById('winOverlay').classList.remove('show');
-  positionCount = {}; // 悔棋重置平局计数
   aiThinking = false;
   renderBoard();
   updateUI();
@@ -1358,7 +1269,6 @@ function resetGame() {
   lastFrom = null;
   lastTo = null;
   moveHistory = [];
-  positionCount = {};
   aiThinking = false;
   document.getElementById('winOverlay').classList.remove('show');
   document.getElementById('thinkingIndicator').classList.remove('show');
@@ -1403,7 +1313,6 @@ function freshStart() {
   lastFrom = null;
   lastTo = null;
   moveHistory = [];
-  positionCount = {};
   aiThinking = false;
   buildCells();
   renderBoard();
