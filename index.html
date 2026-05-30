@@ -331,7 +331,9 @@ let peerReady = false;
 // 当人机对战 + 玩家选先手(黑方)时，棋盘翻转180°让黑方在下方
 
 function toBoard(sx, sy) {
+  // 玩家的棋子始终朝下：黑方玩家翻180°，白方玩家保持默认
   if (gameMode === 'pve' && playerColor === 'B') return [3 - sx, 3 - sy];
+  if (gameMode === 'online' && onlineColor === 'B') return [3 - sx, 3 - sy];
   return [sx, sy];
 }
 
@@ -964,12 +966,12 @@ function updateUI() {
   document.getElementById('countB').textContent = bc;
   document.getElementById('countW').textContent = wc;
 
-  // 动态阵地标签（根据视角翻转）
+  // 动态阵地标签（玩家棋子始终朝下）
   const zl = document.getElementById('zoneLabel');
-  if (gameMode === 'pve' && playerColor === 'B') {
-    zl.innerHTML = '<span class="white-zone">白方阵地 ▲</span><span class="black-zone">▼ 黑方阵地</span>';
+  if ((gameMode === 'pve' && playerColor === 'B') || (gameMode === 'online' && onlineColor === 'B')) {
+    zl.innerHTML = '<span class="white-zone">白方 ▲</span><span class="black-zone">▼ 黑方（你）</span>';
   } else if (gameMode === 'online') {
-    zl.innerHTML = '<span class="black-zone">▲ 黑方（房主）</span><span class="white-zone">白方（加入者） ▼</span>';
+    zl.innerHTML = '<span class="black-zone">▲ 黑方（对手）</span><span class="white-zone">▼ 白方（你）</span>';
   } else {
     zl.innerHTML = '<span class="black-zone">▲ 黑方阵地</span><span class="white-zone">白方阵地 ▼</span>';
   }
