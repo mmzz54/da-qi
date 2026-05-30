@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>达棋</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="达棋">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  display: flex; justify-content: center; align-items: center;
+  min-height: 100vh; user-select: none;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #eee;
+}
+.main-layout { display: flex; gap: 30px; align-items: flex-start; padding: 20px; }
+.left-panel { text-align: center; }
+
+h1 { margin-bottom: 2px; font-size: 28px; color: #e0c068; letter-spacing: 4px; }
+.subtitle { font-size: 11px; color: #889; margin-bottom: 8px; letter-spacing: 1px; }
+
+/* ====== 模式选择 ====== */
+.mode-bar { display: flex; justify-content: center; gap: 6px; margin-bottom: 12px; }
+.mode-btn { padding: 8px 22px; font-size: 14px; border-radius: 20px; border: 2px solid #444; cursor: pointer; font-weight: bold; letter-spacing: 1px; background: rgba(20,20,40,0.7); color: #888; transition: all 0.2s; }
+.mode-btn:hover { border-color: #888; color: #ccc; }
+.mode-btn.active { background: #e0c068; color: #1a1a2e; border-color: #e0c068; }
+.mode-btn.pve-active { background: #4a90d9; color: #fff; border-color: #4a90d9; }
+
+/* ====== PvE设置 ====== */
+.pve-settings { margin-bottom: 10px; padding: 10px 16px; background: rgba(18,22,40,0.7); border-radius: 10px; border: 1px solid #2a2a3a; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; align-items: center; }
+.pve-settings.hidden { display: none; }
+.setting-label { font-size: 12px; color: #888; margin-right: 4px; }
+.setting-btn { padding: 5px 14px; font-size: 12px; border-radius: 14px; border: 1px solid #555; cursor: pointer; background: rgba(20,20,40,0.6); color: #999; transition: all 0.15s; font-weight: bold; }
+.setting-btn:hover { border-color: #aaa; color: #ddd; }
+.setting-btn.active { background: #4a90d9; color: #fff; border-color: #4a90d9; }
+.setting-btn.danger-active { background: #c0392b; color: #fff; border-color: #c0392b; }
+
+/* ====== 计分栏 ====== */
+.score-bar { display: flex; justify-content: center; align-items: center; gap: 14px; margin-bottom: 6px; }
+.score-card { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: bold; min-width: 100px; justify-content: center; }
+.score-card.black { background: rgba(30,30,50,0.8); border: 2px solid #444; color: #ddd; }
+.score-card.white { background: rgba(40,40,50,0.85); border: 2px solid #888; color: #fff; }
+.score-card.active { box-shadow: 0 0 14px rgba(224,192,104,0.5); border-color: #e0c068; }
+.score-card.you { box-shadow: 0 0 10px rgba(74,144,217,0.4); border-color: #4a90d9; }
+.score-dot { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; }
+.score-dot.B { background: radial-gradient(circle at 38% 35%, #666, #1a1a1a); border: 2px solid #555; }
+.score-dot.W { background: radial-gradient(circle at 38% 35%, #fff, #c8c8c8); border: 2px solid #aaa; }
+.score-count { font-size: 20px; min-width: 20px; }
+.vs { font-size: 13px; color: #666; font-weight: normal; }
+
+/* ====== 状态栏 ====== */
+.status-bar { margin-bottom: 10px; font-size: 14px; padding: 5px 18px; background: rgba(22,33,62,0.7); border-radius: 20px; display: inline-block; }
+.status-bar .turn-text { color: #aab; }
+.status-bar .player-name { font-weight: bold; font-size: 16px; }
+.status-bar .B { color: #eee; }
+.status-bar .W { color: #fff; }
+
+/* ====== 棋盘 ====== */
+.board-wrap { display: inline-block; background: linear-gradient(180deg, #3a2a1a 0%, #5a3a1a 50%, #3a2a1a 100%); padding: 16px; border-radius: 14px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 3px solid #5a3a1a; }
+.board-zone-label { display: flex; justify-content: space-between; padding: 0 4px; margin-bottom: 4px; font-size: 11px; letter-spacing: 2px; }
+.board-zone-label .black-zone { color: #999; }
+.board-zone-label .white-zone { color: #ddd; }
+.board { display: grid; grid-template-columns: repeat(4, 72px); grid-template-rows: repeat(4, 72px); gap: 3px; background: #2a1a0a; padding: 3px; border-radius: 4px; }
+.cell { width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 2px; position: relative; }
+.cell.cbg-top { background: #dcc8a8; }
+.cell.cbg-bot { background: #f0e0c8; }
+.cell.valid-move { background: #7ddf90 !important; box-shadow: inset 0 0 0 3px #4caf50; }
+.cell.selected { box-shadow: inset 0 0 0 4px #ffd700 !important; }
+.cell.last-from { background: #ffe0a0 !important; }
+.cell.last-to { background: #ffe0a0 !important; }
+.cell.captured-flash { animation: cpop 0.4s ease-out; }
+@keyframes cpop { 0% { background: #ff4444; transform: scale(1.1); } 100% { transform: scale(1); } }
+.cell.blocked { cursor: not-allowed; opacity: 0.6; }
+
+.piece { width: 50px; height: 50px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.4); cursor: pointer; }
+.piece.B { background: radial-gradient(circle at 38% 35%, #5a5a5a, #1a1a1a 70%); border: 2px solid #444; }
+.piece.W { background: radial-gradient(circle at 38% 35%, #fff, #c0c0c0 70%); border: 2px solid #999; }
+.coord-label { position: absolute; bottom: 1px; right: 4px; font-size: 9px; color: #bba; pointer-events: none; }
+
+/* ====== 按钮 ====== */
+.btn-row { margin-top: 8px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.btn { padding: 7px 20px; font-size: 14px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; letter-spacing: 1px; transition: all 0.2s; }
+.btn-reset { background: #e0c068; color: #1a1a2e; }
+.btn-reset:hover { background: #f0d078; }
+.btn-undo { background: #334; color: #aaa; border: 1px solid #555; }
+.btn-undo:hover { background: #445; color: #ddd; }
+.btn-undo:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ====== AI思考指示 ====== */
+.thinking-indicator { display: none; margin-top: 6px; font-size: 13px; color: #e0c068; letter-spacing: 1px; }
+.thinking-indicator.show { display: block; }
+.thinking-dots::after { content: ''; animation: dots 1.2s steps(4, end) infinite; }
+@keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } 100% { content: ''; } }
+
+/* ====== 规则面板 ====== */
+.rules-panel { width: 320px; background: rgba(18,22,40,0.85); border: 1px solid #2a2a3a; border-radius: 14px; padding: 20px; line-height: 1.7; flex-shrink: 0; }
+.rules-panel h2 { font-size: 18px; color: #e0c068; text-align: center; margin-bottom: 16px; letter-spacing: 2px; padding-bottom: 10px; border-bottom: 1px solid #2a2a3a; }
+.rules-panel .rule-block { margin-bottom: 14px; }
+.rules-panel .rule-title { font-size: 14px; font-weight: bold; color: #ccc; margin-bottom: 4px; }
+.rules-panel .rule-desc { font-size: 12px; color: #889; padding-left: 2px; }
+.rules-panel .rule-note { font-size: 11px; color: #667; font-style: italic; margin-top: 2px; padding-left: 4px; border-left: 2px solid #333; }
+.rules-panel .rule-tip { font-size: 11px; color: #e0c068; margin-top: 2px; padding-left: 4px; }
+.cap-demo { background: #0d0d20; border-radius: 8px; padding: 10px 12px; margin: 6px 0; font-size: 12px; }
+.cap-demo .demo-row { display: flex; align-items: center; gap: 6px; margin: 3px 0; font-family: 'Consolas', monospace; }
+.cap-demo .cap-tag { color: #f66; font-size: 11px; }
+.cap-demo .me-tag { color: #ffd700; font-size: 11px; }
+.em-B { color: #ccc; font-weight: bold; }
+.em-W { color: #fff; font-weight: bold; }
+.em-red { color: #f66; }
+
+.win-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10; justify-content: center; align-items: center; }
+.win-overlay.show { display: flex; }
+.win-dialog { background: #1e2a3a; border: 2px solid #e0c068; border-radius: 16px; padding: 30px 40px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+.win-dialog h2 { font-size: 28px; margin-bottom: 10px; }
+.win-dialog .B-win { color: #ddd; }
+.win-dialog .W-win { color: #fff; }
+.win-dialog p { color: #889; margin-bottom: 20px; }
+
+.rules-toggle { display: none; margin-bottom: 10px; padding: 6px 16px; font-size: 13px; background: rgba(30,30,50,0.8); color: #e0c068; border: 1px solid #e0c068; border-radius: 20px; cursor: pointer; letter-spacing: 1px; }
+
+.ai-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; background: #4a90d9; color: #fff; margin-left: 4px; vertical-align: middle; }
+
+@media (max-width: 780px) {
+  .main-layout { flex-direction: column; align-items: center; gap: 10px; padding: 10px; }
+  .rules-panel { width: 100%; max-width: 420px; }
+  .rules-toggle { display: inline-block; }
+  .rules-panel.collapsed { display: none; }
+  .board { grid-template-columns: repeat(4, 60px); grid-template-rows: repeat(4, 60px); }
+  .cell { width: 60px; height: 60px; }
+  .piece { width: 42px; height: 42px; }
+  h1 { font-size: 24px; }
+  .score-card { padding: 5px 12px; font-size: 13px; min-width: 80px; }
+}
+@media (max-width: 400px) {
+  .board { grid-template-columns: repeat(4, 52px); grid-template-rows: repeat(4, 52px); gap: 2px; padding: 2px; }
+  .cell { width: 52px; height: 52px; }
+  .piece { width: 36px; height: 36px; }
+  .board-wrap { padding: 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="main-layout">
+  <div class="left-panel">
+    <h1>达 棋</h1>
+    <div class="subtitle">P I N C E R S</div>
+
+    <!-- 模式选择 -->
+    <div class="mode-bar">
+      <button class="mode-btn active" id="btnPvP" onclick="setMode('pvp')">👥 双人对战</button>
+      <button class="mode-btn" id="btnPvE" onclick="setMode('pve')">🤖 人机对战</button>
+    </div>
+
+    <!-- 人机设置 -->
+    <div class="pve-settings hidden" id="pveSettings">
+      <div>
+        <span class="setting-label">🎯 先后手：</span>
+        <button class="setting-btn active" id="btnFirst" onclick="setPlayerColor('B')">⚫ 先手(黑)</button>
+        <button class="setting-btn" id="btnSecond" onclick="setPlayerColor('W')">⚪ 后手(白)</button>
+      </div>
+      <div>
+        <span class="setting-label">📊 难度：</span>
+        <button class="setting-btn" id="btnNormal" onclick="setDifficulty('normal')">普通</button>
+        <button class="setting-btn active danger-active" id="btnHard" onclick="setDifficulty('hard')">困难</button>
+      </div>
+    </div>
+
+    <!-- 计分栏 -->
+    <div class="score-bar">
+      <div class="score-card black" id="scoreBlack">
+        <span class="score-dot B"></span><span>黑方</span>
+        <span class="score-count" id="countB">6</span>
+      </div>
+      <span class="vs">VS</span>
+      <div class="score-card white" id="scoreWhite">
+        <span class="score-dot W"></span><span>白方</span>
+        <span class="score-count" id="countW">6</span>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <span class="turn-text">当前回合：</span>
+      <span class="player-name B" id="playerDisplay">● 黑方</span>
+      <span id="aiBadge"></span>
+    </div>
+
+    <div class="board-wrap">
+      <div class="board-zone-label" id="zoneLabel">
+        <span class="black-zone">▲ 黑方阵地</span>
+        <span class="white-zone">白方阵地 ▼</span>
+      </div>
+      <div class="board" id="board"></div>
+    </div>
+
+    <div class="thinking-indicator" id="thinkingIndicator">
+      🤔 AI思考中<span class="thinking-dots"></span>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-reset" onclick="resetGame()">↺ 重开</button>
+      <button class="btn btn-undo" id="btnUndo" onclick="undo()">↩ 悔棋</button>
+    </div>
+
+    <div id="debugStatus" style="margin-top:6px;font-size:11px;color:#f80;font-family:monospace;min-height:16px;"></div>
+  </div>
+
+  <button class="rules-toggle" id="rulesToggle" onclick="toggleRules()">📖 游戏规则</button>
+
+  <div class="rules-panel" id="rulesPanel">
+    <h2>📖 游戏规则</h2>
+    <div class="rule-block">
+      <div class="rule-title">🎯 游戏简介</div>
+      <div class="rule-desc">达棋是一款 4×4 棋盘的双人策略棋类。双方各有 <span class="em-B">6 枚黑子</span>和 <span class="em-W">6 枚白子</span>，轮流走棋，通过"夹击"吃掉对方棋子，最终取胜。</div>
+    </div>
+    <div class="rule-block">
+      <div class="rule-title">🏆 胜利条件</div>
+      <div class="rule-desc">满足以下任一条件即获胜：</div>
+      <div class="rule-desc">① 吃掉对方到<span class="em-red">只剩 1 颗</span>棋子</div>
+      <div class="rule-desc">② 让对手<span class="em-red">无路可走</span>（所有棋子被堵死）</div>
+    </div>
+    <div class="rule-block">
+      <div class="rule-title">🚶 走棋规则</div>
+      <div class="rule-desc">• 点击己方棋子选中（金色高亮）</div>
+      <div class="rule-desc">• 绿色格子 = 可走位置</div>
+      <div class="rule-desc">• 每次只能<span class="em-red">上下左右走一格</span></div>
+      <div class="rule-desc">• 不可斜走、不可跳子</div>
+      <div class="rule-note">提示：点击已选中的棋子或按 Esc 可取消选择。</div>
+    </div>
+    <div class="rule-block">
+      <div class="rule-title">⚔️ 夹击吃子（核心）</div>
+      <div class="rule-desc">走棋后，若在<span class="em-red">同行或同列</span>上形成"<b>己方二连紧挨敌方</b>"，则该敌方被吃掉。共4种夹击模式：</div>
+      <div class="cap-demo">
+        <div class="demo-row"><span class="cap-tag">吃!</span> <span class="em-W">敌</span> <span class="em-B">友</span> <span class="me-tag">●我</span> <span>&nbsp;</span> <span>&nbsp;</span><span style="color:#667;font-size:10px;">我走到友旁夹敌</span></div>
+        <div class="demo-row"><span>&nbsp;</span> <span>&nbsp;</span> <span class="me-tag">●我</span> <span class="em-B">友</span> <span class="em-W">敌</span> <span class="cap-tag">吃!</span><span style="color:#667;font-size:10px;">我走到敌旁，友在对面</span></div>
+        <div class="demo-row"><span class="cap-tag">吃!</span> <span class="em-W">敌</span> <span class="me-tag">●我</span> <span class="em-B">友</span> <span>&nbsp;</span> <span>&nbsp;</span><span style="color:#667;font-size:10px;">我插入敌友之间</span></div>
+        <div class="demo-row"><span>&nbsp;</span> <span>&nbsp;</span> <span class="em-B">友</span> <span class="me-tag">●我</span> <span class="em-W">敌</span> <span class="cap-tag">吃!</span><span style="color:#667;font-size:10px;">我插入友敌之间</span></div>
+      </div>
+      <div class="rule-desc">以上模式在<span class="em-red">行和列上均适用</span>。走一步可能同时吃掉多枚（如行+列各吃一个）。</div>
+    </div>
+    <div class="rule-block">
+      <div class="rule-title">⚠️ 特殊规则</div>
+      <div class="rule-desc">• <b>满行/列不触发</b>：若该行（或列）已有 <span class="em-red">4 颗棋子</span>（无空位），则不会触发夹击。</div>
+      <div class="rule-desc">• <b>连续夹击</b>：走一步可能同时在行和列上都形成夹击，一次吃掉多枚。</div>
+      <div class="rule-desc">• <b>无子可走即输</b>：若所有己方棋子四周均被堵住无法移动，则立即判负。</div>
+    </div>
+    <div class="rule-block">
+      <div class="rule-title">💡 策略提示</div>
+      <div class="rule-tip">• 尽量让棋子留在中心区域（活动空间大）</div>
+      <div class="rule-tip">• 注意避免己方棋子被对方二连夹击</div>
+      <div class="rule-tip">• 利用角落限制对方棋子的活动范围</div>
+      <div class="rule-tip">• 满行/列是安全区，可用来防守</div>
+    </div>
+  </div>
+</div>
+
+<div class="win-overlay" id="winOverlay" onclick="this.classList.remove('show')">
+  <div class="win-dialog" id="winDialog"></div>
+</div>
+
+<script>
+// ==================== 游戏状态 ====================
+let board, currentPlayer, status, selectedCell, lastFrom, lastTo;
+let gameMode = 'pvp';       // 'pvp' | 'pve'
+let playerColor = 'B';      // PvE中玩家的颜色
+let aiDifficulty = 'hard';  // 'normal' | 'hard'
+let aiThinking = false;
+let moveHistory = [];       // [{board, currentPlayer, status, lastFrom, lastTo}]
+
+// ==================== 视角变换 ====================
+// 当人机对战 + 玩家选先手(黑方)时，棋盘翻转180°让黑方在下方
+
+function toBoard(sx, sy) {
+  if (gameMode === 'pve' && playerColor === 'B') return [3 - sx, 3 - sy];
+  return [sx, sy];
+}
+
+// toBoard 翻转的逆仍是自身，board→screen 也用同一个函数
+function toScreen(bx, by) {
+  return toBoard(bx, by);
+}
+
+// ==================== 棋盘逻辑 ====================
+
+function initBoard() {
+  return [
+    ["B","B","B","B"],
+    ["B",null,null,"B"],
+    ["W",null,null,"W"],
+    ["W","W","W","W"]
+  ];
+}
+
+function deepCopyBoard(b) { return b.map(r => [...r]); }
+
+function countPieces(c) {
+  let n = 0;
+  for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) if (board[y][x] === c) n++;
+  return n;
+}
+
+function hasLegalMove(color) {
+  for (let y = 0; y < 4; y++)
+    for (let x = 0; x < 4; x++) {
+      if (board[y][x] !== color) continue;
+      for (const [dx,dy] of [[0,-1],[0,1],[-1,0],[1,0]])
+        if (x+dx>=0&&x+dx<=3&&y+dy>=0&&y+dy<=3 && board[y+dy][x+dx]===null)
+          return true;
+    }
+  return false;
+}
+
+function getCaptures(mx, my, color) {
+  const enemy = color === 'B' ? 'W' : 'B';
+  const cap = new Set();
+  // row
+  const row = board[my];
+  if (row.filter(c => c).length < 4) {
+    const i = mx;
+    if (i-2>=0 && row[i-2]===enemy && row[i-1]===color && row[i]===color) cap.add(`${i-2},${my}`);
+    if (i+2<=3 && row[i]===color && row[i+1]===color && row[i+2]===enemy) cap.add(`${i+2},${my}`);
+    if (i-1>=0 && i+1<=3 && row[i-1]===enemy && row[i]===color && row[i+1]===color) cap.add(`${i-1},${my}`);
+    if (i-1>=0 && i+1<=3 && row[i-1]===color && row[i]===color && row[i+1]===enemy) cap.add(`${i+1},${my}`);
+  }
+  // col
+  const col = [board[0][mx], board[1][mx], board[2][mx], board[3][mx]];
+  if (col.filter(c => c).length < 4) {
+    const i = my;
+    if (i-2>=0 && col[i-2]===enemy && col[i-1]===color && col[i]===color) cap.add(`${mx},${i-2}`);
+    if (i+2<=3 && col[i]===color && col[i+1]===color && col[i+2]===enemy) cap.add(`${mx},${i+2}`);
+    if (i-1>=0 && i+1<=3 && col[i-1]===enemy && col[i]===color && col[i+1]===color) cap.add(`${mx},${i-1}`);
+    if (i-1>=0 && i+1<=3 && col[i-1]===color && col[i]===color && col[i+1]===enemy) cap.add(`${mx},${i+1}`);
+  }
+  return [...cap].map(s => s.split(',').map(Number));
+}
+
+function getAllLegalMoves(color) {
+  const moves = [];
+  for (let y = 0; y < 4; y++)
+    for (let x = 0; x < 4; x++) {
+      if (board[y][x] !== color) continue;
+      for (const [dx,dy] of [[0,-1],[0,1],[-1,0],[1,0]]) {
+        const nx = x + dx, ny = y + dy;
+        if (nx >= 0 && nx <= 3 && ny >= 0 && ny <= 3 && board[ny][nx] === null)
+          moves.push({ from: [x,y], to: [nx,ny] });
+      }
+    }
+  return moves;
+}
+
+function simulateMove(b, from, to, moverColor) {
+  const nb = deepCopyBoard(b);
+  nb[from[1]][from[0]] = null;
+  nb[to[1]][to[0]] = moverColor;
+  // compute captures
+  const enemy = moverColor === 'B' ? 'W' : 'B';
+  const cap = new Set();
+  const [mx, my] = to;
+  // row
+  const row = nb[my];
+  if (row.filter(c => c).length < 4) {
+    const i = mx;
+    if (i-2>=0 && row[i-2]===enemy && row[i-1]===moverColor && row[i]===moverColor) cap.add(`${i-2},${my}`);
+    if (i+2<=3 && row[i]===moverColor && row[i+1]===moverColor && row[i+2]===enemy) cap.add(`${i+2},${my}`);
+    if (i-1>=0 && i+1<=3 && row[i-1]===enemy && row[i]===moverColor && row[i+1]===moverColor) cap.add(`${i-1},${my}`);
+    if (i-1>=0 && i+1<=3 && row[i-1]===moverColor && row[i]===moverColor && row[i+1]===enemy) cap.add(`${i+1},${my}`);
+  }
+  // col
+  const col = [nb[0][mx], nb[1][mx], nb[2][mx], nb[3][mx]];
+  if (col.filter(c => c).length < 4) {
+    const i = my;
+    if (i-2>=0 && col[i-2]===enemy && col[i-1]===moverColor && col[i]===moverColor) cap.add(`${mx},${i-2}`);
+    if (i+2<=3 && col[i]===moverColor && col[i+1]===moverColor && col[i+2]===enemy) cap.add(`${mx},${i+2}`);
+    if (i-1>=0 && i+1<=3 && col[i-1]===enemy && col[i]===moverColor && col[i+1]===moverColor) cap.add(`${mx},${i-1}`);
+    if (i-1>=0 && i+1<=3 && col[i-1]===moverColor && col[i]===moverColor && col[i+1]===enemy) cap.add(`${mx},${i+1}`);
+  }
+  const captured = [...cap].map(s => s.split(',').map(Number));
+  for (const [cx, cy] of captured) nb[cy][cx] = null;
+  return { board: nb, captured };
+}
+
+function getSimulatedLegalMoves(b, color) {
+  const moves = [];
+  for (let y = 0; y < 4; y++)
+    for (let x = 0; x < 4; x++) {
+      if (b[y][x] !== color) continue;
+      for (const [dx,dy] of [[0,-1],[0,1],[-1,0],[1,0]]) {
+        const nx = x + dx, ny = y + dy;
+        if (nx >= 0 && nx <= 3 && ny >= 0 && ny <= 3 && b[ny][nx] === null)
+          moves.push({ from: [x,y], to: [nx,ny] });
+      }
+    }
+  return moves;
+}
+
+function countSimPieces(b, c) {
+  let n = 0;
+  for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) if (b[y][x] === c) n++;
+  return n;
+}
+
+function hasSimLegalMove(b, color) {
+  for (let y = 0; y < 4; y++)
+    for (let x = 0; x < 4; x++) {
+      if (b[y][x] !== color) continue;
+      for (const [dx,dy] of [[0,-1],[0,1],[-1,0],[1,0]])
+        if (x+dx>=0&&x+dx<=3&&y+dy>=0&&y+dy<=3 && b[y+dy][x+dx]===null)
+          return true;
+    }
+  return false;
+}
+
+// ==================== AI引擎 ====================
+// 纯本地运算，无需网络，全部使用基础 JS API
+
+// 局面评估（简洁高效）
+function aiEval(b, aiColor) {
+  const enemy = aiColor === 'B' ? 'W' : 'B';
+  const myCnt = countSimPieces(b, aiColor);
+  const enCnt = countSimPieces(b, enemy);
+
+  // 终局
+  if (enCnt <= 1 || !hasSimLegalMove(b, enemy)) return 100000;
+  if (myCnt <= 1 || !hasSimLegalMove(b, aiColor)) return -100000;
+
+  // 棋子差
+  let s = (myCnt - enCnt) * 600;
+
+  // 机动性
+  const myMob = getSimulatedLegalMoves(b, aiColor).length;
+  const enMob = getSimulatedLegalMoves(b, enemy).length;
+  s += (myMob - enMob) * 40;
+
+  // 吃子威胁
+  for (const m of getSimulatedLegalMoves(b, aiColor)) {
+    s += simulateMove(b, m.from, m.to, aiColor).captured.length * 180;
+  }
+  for (const m of getSimulatedLegalMoves(b, enemy)) {
+    s -= simulateMove(b, m.from, m.to, enemy).captured.length * 220;
+  }
+
+  // 中心加分
+  const center = [[1,1],[1,2],[2,1],[2,2]];
+  for (const [cx,cy] of center) {
+    if (b[cy][cx] === aiColor) s += 25;
+    if (b[cy][cx] === enemy) s -= 25;
+  }
+
+  return s;
+}
+
+// 走法排序（吃子优先）
+function sortMoves(b, moves, color) {
+  const enemy = color === 'B' ? 'W' : 'B';
+  return moves.map(function(m) {
+    const cap = simulateMove(b, m.from, m.to, color).captured.length;
+    var p = cap * 1000;
+    var tx = m.to[0], ty = m.to[1];
+    if ((tx === 1 || tx === 2) && (ty === 1 || ty === 2)) p += 60;
+    var fx = m.from[0], fy = m.from[1];
+    // 相邻敌子时优先移动（防守）
+    var dirs = [[0,-1],[0,1],[-1,0],[1,0]];
+    for (var d = 0; d < 4; d++) {
+      var nx = fx + dirs[d][0], ny = fy + dirs[d][1];
+      if (nx >= 0 && nx <= 3 && ny >= 0 && ny <= 3 && b[ny][nx] === enemy) {
+        p += 120; break;
+      }
+    }
+    return { from: m.from, to: m.to, priority: p };
+  }).sort(function(a, b) { return b.priority - a.priority; });
+}
+
+// Minimax + Alpha-Beta 剪枝
+function aiSearch(b, depth, alpha, beta, maximizing, aiColor) {
+  var enemy = aiColor === 'B' ? 'W' : 'B';
+  var mover = maximizing ? aiColor : enemy;
+
+  // 终局
+  var myCnt = countSimPieces(b, aiColor);
+  var enCnt = countSimPieces(b, enemy);
+  if (enCnt <= 1 || !hasSimLegalMove(b, enemy)) return 100000 + depth * 50;
+  if (myCnt <= 1 || !hasSimLegalMove(b, aiColor)) return -100000 - depth * 50;
+
+  if (depth <= 0) return aiEval(b, aiColor);
+
+  var moves = getSimulatedLegalMoves(b, mover);
+  if (moves.length === 0) return maximizing ? -100000 : 100000;
+
+  moves = sortMoves(b, moves, mover);
+
+  if (maximizing) {
+    var best = -Infinity;
+    for (var i = 0; i < moves.length; i++) {
+      var nb = simulateMove(b, moves[i].from, moves[i].to, mover).board;
+      var score = aiSearch(nb, depth - 1, alpha, beta, false, aiColor);
+      if (score > best) best = score;
+      if (best > alpha) alpha = best;
+      if (alpha >= beta) break;
+    }
+    return best;
+  } else {
+    var best = Infinity;
+    for (var i = 0; i < moves.length; i++) {
+      var nb = simulateMove(b, moves[i].from, moves[i].to, mover).board;
+      var score = aiSearch(nb, depth - 1, alpha, beta, true, aiColor);
+      if (score < best) best = score;
+      if (best < beta) beta = best;
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+}
+
+// 获取最佳移动
+function getBestMove(aiColor) {
+  var moves = getSimulatedLegalMoves(board, aiColor);
+  if (moves.length === 0) return null;
+  if (moves.length === 1) return moves[0];
+
+  moves = sortMoves(board, moves, aiColor);
+  var depth = aiDifficulty === 'hard' ? 6 : 3;
+  var bestMove = moves[0];
+  var bestScore = -Infinity;
+  var t0 = Date.now();
+  var limit = 2500; // 2.5 秒超时
+
+  for (var i = 0; i < moves.length; i++) {
+    if (Date.now() - t0 > limit) break;
+    var nb = simulateMove(board, moves[i].from, moves[i].to, aiColor).board;
+    var score = aiSearch(nb, depth - 1, -Infinity, Infinity, false, aiColor);
+    if (aiDifficulty === 'normal') score += (Math.random() - 0.5) * 100;
+    if (score > bestScore) { bestScore = score; bestMove = moves[i]; }
+  }
+  return bestMove;
+}
+
+// ==================== 执行移动 ====================
+
+function saveState() {
+  moveHistory.push({
+    board: deepCopyBoard(board),
+    currentPlayer,
+    status,
+    lastFrom: lastFrom ? { ...lastFrom } : null,
+    lastTo: lastTo ? { ...lastTo } : null,
+    selectedCell: selectedCell ? { ...selectedCell } : null
+  });
+}
+
+function executeMove(x1, y1, x2, y2) {
+  if (status !== 'playing') return { error: '游戏已结束' };
+  if (board[y1][x1] !== currentPlayer) return { error: '没有你的棋子' };
+  if (board[y2][x2] !== null) return { error: '目标非空位' };
+  if (Math.abs(x1-x2)+Math.abs(y1-y2) !== 1) return { error: '只能走一格' };
+
+  saveState();
+
+  board[y1][x1] = null;
+  board[y2][x2] = currentPlayer;
+  const captured = getCaptures(x2, y2, currentPlayer);
+  for (const [cx, cy] of captured) board[cy][cx] = null;
+
+  const bc = countPieces('B'), wc = countPieces('W');
+  if (wc <= 1) { status = 'B_wins'; return { board: deepCopyBoard(board), currentPlayer, status: 'B_wins', captured }; }
+  if (bc <= 1) { status = 'W_wins'; return { board: deepCopyBoard(board), currentPlayer, status: 'W_wins', captured }; }
+
+  const mover = currentPlayer;
+  currentPlayer = currentPlayer === 'B' ? 'W' : 'B';
+  if (!hasLegalMove(currentPlayer)) {
+    status = mover === 'B' ? 'B_wins' : 'W_wins';
+    return { board: deepCopyBoard(board), currentPlayer, status, captured };
+  }
+  return { board: deepCopyBoard(board), currentPlayer, status: 'playing', captured };
+}
+
+function executeAIMoveDirect(from, to) {
+  const [x1, y1] = from, [x2, y2] = to;
+  saveState();
+  board[y1][x1] = null;
+  board[y2][x2] = currentPlayer;
+  const captured = getCaptures(x2, y2, currentPlayer);
+  for (const [cx, cy] of captured) board[cy][cx] = null;
+
+  const bc = countPieces('B'), wc = countPieces('W');
+  if (wc <= 1) { status = 'B_wins'; }
+  else if (bc <= 1) { status = 'W_wins'; }
+  else {
+    const mover = currentPlayer;
+    currentPlayer = currentPlayer === 'B' ? 'W' : 'B';
+    if (!hasLegalMove(currentPlayer)) {
+      status = mover === 'B' ? 'B_wins' : 'W_wins';
+    }
+  }
+  lastFrom = { x: x1, y: y1 };
+  lastTo = { x: x2, y: y2 };
+  return captured;
+}
+
+// ==================== UI渲染 ====================
+
+let cachedCells = [];
+
+function buildCells() {
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML = '';
+  cachedCells = [];
+  for (let sy = 0; sy < 4; sy++) {
+    for (let sx = 0; sx < 4; sx++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.style.gridRow = sy + 1;
+      cell.style.gridColumn = sx + 1;
+      const csx = sx, csy = sy;
+      cell.addEventListener('click', () => {
+        const [bx, by] = toBoard(csx, csy);
+        onCellClick(bx, by);
+      });
+      boardEl.appendChild(cell);
+      cachedCells.push({ el: cell, sx: csx, sy: csy });
+    }
+  }
+}
+
+function renderBoard() {
+  if (cachedCells.length !== 16) buildCells();
+
+  for (const { el, sx, sy } of cachedCells) {
+    const [bx, by] = toBoard(sx, sy);
+    const isTop = by <= 1;
+    el.className = 'cell ' + (isTop ? 'cbg-top' : 'cbg-bot');
+
+    if (selectedCell && selectedCell.x === bx && selectedCell.y === by)
+      el.classList.add('selected');
+    if (lastFrom && lastFrom.x === bx && lastFrom.y === by)
+      el.classList.add('last-from');
+    if (lastTo && lastTo.x === bx && lastTo.y === by)
+      el.classList.add('last-to');
+
+    // 可走位置提示
+    if (selectedCell && board[by][bx] === null &&
+        Math.abs(selectedCell.x-bx)+Math.abs(selectedCell.y-by) === 1)
+      el.classList.add('valid-move');
+
+    // 非玩家回合时显示不可操作
+    if (gameMode === 'pve' && status === 'playing' && currentPlayer !== playerColor && !aiThinking)
+      el.classList.add('blocked');
+
+    const p = board[by][bx];
+    const existingPiece = el.querySelector('.piece');
+    if (p && (!existingPiece || !existingPiece.classList.contains(p))) {
+      el.innerHTML = '';
+      const pieceEl = document.createElement('div');
+      pieceEl.className = 'piece ' + p;
+      el.appendChild(pieceEl);
+      const label = document.createElement('span');
+      label.className = 'coord-label';
+      label.textContent = `${bx},${by}`;
+      el.appendChild(label);
+    } else if (!p && existingPiece) {
+      el.innerHTML = '';
+      const label = document.createElement('span');
+      label.className = 'coord-label';
+      label.textContent = `${bx},${by}`;
+      el.appendChild(label);
+    } else if (!p && el.children.length === 0) {
+      const label = document.createElement('span');
+      label.className = 'coord-label';
+      label.textContent = `${bx},${by}`;
+      el.appendChild(label);
+    }
+  }
+}
+
+function flashCaptured(list) {
+  for (const [bx, by] of list) {
+    const [sx, sy] = toScreen(bx, by);
+    const entry = cachedCells.find(c => c.sx === sx && c.sy === sy);
+    if (entry) {
+      entry.el.classList.add('captured-flash');
+      setTimeout(() => entry.el.classList.remove('captured-flash'), 400);
+    }
+  }
+}
+
+function updateUI() {
+  const bc = countPieces('B'), wc = countPieces('W');
+  document.getElementById('countB').textContent = bc;
+  document.getElementById('countW').textContent = wc;
+
+  // 动态阵地标签（根据视角翻转）
+  const zl = document.getElementById('zoneLabel');
+  if (gameMode === 'pve' && playerColor === 'B') {
+    zl.innerHTML = '<span class="white-zone">白方阵地 ▲</span><span class="black-zone">▼ 黑方阵地</span>';
+  } else {
+    zl.innerHTML = '<span class="black-zone">▲ 黑方阵地</span><span class="white-zone">白方阵地 ▼</span>';
+  }
+
+  const sb = document.getElementById('scoreBlack');
+  const sw = document.getElementById('scoreWhite');
+  sb.classList.remove('active', 'you');
+  sw.classList.remove('active', 'you');
+
+  const pd = document.getElementById('playerDisplay');
+  const aiBadge = document.getElementById('aiBadge');
+
+  if (status === 'playing') {
+    pd.textContent = currentPlayer === 'B' ? '● 黑方' : '○ 白方';
+    pd.className = 'player-name ' + currentPlayer;
+    if (currentPlayer === 'B') sb.classList.add('active');
+    else sw.classList.add('active');
+
+    // PvE模式：标记玩家颜色
+    if (gameMode === 'pve') {
+      if (playerColor === 'B') sb.classList.add('you');
+      else sw.classList.add('you');
+    }
+
+    // 标记AI
+    if (gameMode === 'pve' && currentPlayer !== playerColor) {
+      aiBadge.innerHTML = '<span class="ai-badge">AI</span>';
+    } else {
+      aiBadge.innerHTML = '';
+    }
+  } else if (status === 'B_wins') {
+    pd.textContent = '🏆 黑方胜'; pd.className = 'player-name B';
+    aiBadge.innerHTML = '';
+    showWin('B');
+  } else if (status === 'W_wins') {
+    pd.textContent = '🏆 白方胜'; pd.className = 'player-name W';
+    aiBadge.innerHTML = '';
+    showWin('W');
+  }
+
+  // 悔棋按钮状态
+  const btnUndo = document.getElementById('btnUndo');
+  const canUndo = moveHistory.length > 0 && !aiThinking;
+  if ((gameMode === 'pve' || gameMode === 'pvp') && canUndo) {
+    btnUndo.disabled = false;
+  } else {
+    btnUndo.disabled = true;
+  }
+  btnUndo.style.display = (gameMode === 'pve' || gameMode === 'pvp') ? 'inline-block' : 'none';
+
+  // AI思考指示
+  const thinkEl = document.getElementById('thinkingIndicator');
+  if (aiThinking) {
+    thinkEl.classList.add('show');
+  } else {
+    thinkEl.classList.remove('show');
+  }
+}
+
+function showWin(winner) {
+  const name = winner === 'B' ? '黑方' : '白方';
+  const cls = winner === 'B' ? 'B-win' : 'W-win';
+  const aiWin = gameMode === 'pve' && winner !== playerColor ? ' (AI)' : '';
+  document.getElementById('winDialog').innerHTML =
+    `<h2 class="${cls}">🏆 ${name}${aiWin}胜利！</h2><p>点击任意处关闭</p>`;
+  document.getElementById('winOverlay').classList.add('show');
+}
+
+// ==================== 交互 ====================
+
+function onCellClick(bx, by) {
+  if (status !== 'playing') return;
+  if (aiThinking) return;
+
+  // PvE模式：不是玩家回合不能动
+  if (gameMode === 'pve' && currentPlayer !== playerColor) return;
+
+  const piece = board[by][bx];
+
+  if (selectedCell) {
+    const sx = selectedCell.x, sy = selectedCell.y;
+    // 点击同一格：取消选择
+    if (sx === bx && sy === by) { selectedCell = null; renderBoard(); return; }
+    // 点击己方另一棋子：切换选择
+    if (piece === currentPlayer) { selectedCell = { x: bx, y: by }; renderBoard(); return; }
+    // 点击空位：尝试移动
+    if (piece === null) {
+      const result = executeMove(sx, sy, bx, by);
+      if (!result.error) {
+        lastFrom = { x: sx, y: sy }; lastTo = { x: bx, y: by };
+        if (result.captured.length) flashCaptured(result.captured);
+        selectedCell = null;
+        renderBoard();
+        updateUI();
+        // PvE模式：AI自动走
+        if (gameMode === 'pve' && result.status === 'playing') {
+          document.getElementById('debugStatus').textContent = 'player moved, triggering AI...';
+          scheduleAiMove();
+        } else if (gameMode === 'pve') {
+          document.getElementById('debugStatus').textContent = 'game over, status=' + result.status;
+        }
+      } else {
+        document.getElementById('debugStatus').textContent = 'move error: ' + result.error;
+        // 走法非法，重置选择
+        selectedCell = null;
+        renderBoard();
+      }
+      return;
+    }
+    // 点击对方棋子：取消选择
+    selectedCell = null; renderBoard(); return;
+  }
+
+  // 未选择时，点击己方棋子
+  if (piece === currentPlayer) { selectedCell = { x: bx, y: by }; renderBoard(); }
+}
+
+// ==================== AI调度 ====================
+
+function scheduleAiMove() {
+  var dbg = document.getElementById('debugStatus');
+  dbg.textContent = 'scheduleAiMove called, currentPlayer=' + currentPlayer;
+
+  if (!hasLegalMove(currentPlayer)) {
+    dbg.textContent += ' | AI无合法走法！';
+    return;
+  }
+
+  aiThinking = true;
+  updateUI();
+  renderBoard();
+
+  dbg.textContent += ' | thinking...';
+
+  // 同步计算（不用 setTimeout，确保一定执行）
+  var captured = [];
+  try {
+    var t0 = Date.now();
+    dbg.textContent += ' | getBestMove(' + currentPlayer + ')...';
+    var bestMove = getBestMove(currentPlayer);
+    dbg.textContent += ' done in ' + (Date.now() - t0) + 'ms';
+
+    if (!bestMove) {
+      dbg.textContent += ' | bestMove=null, trying fallback';
+      var fallback = getSimulatedLegalMoves(board, currentPlayer);
+      if (fallback.length > 0) {
+        bestMove = fallback[Math.floor(Math.random() * fallback.length)];
+        dbg.textContent += ' | fallback chosen';
+      } else {
+        dbg.textContent += ' | NO fallback moves!';
+      }
+    }
+    if (bestMove) {
+      dbg.textContent += ' | move: ' + bestMove.from + '->' + bestMove.to;
+      captured = executeAIMoveDirect(bestMove.from, bestMove.to) || [];
+      if (captured.length) flashCaptured(captured);
+      dbg.textContent += ' | OK';
+    }
+  } catch (e) {
+    dbg.textContent += ' | ERROR: ' + e.message;
+    var emergency = getSimulatedLegalMoves(board, currentPlayer);
+    if (emergency.length > 0) {
+      var m = emergency[0];
+      captured = executeAIMoveDirect(m.from, m.to) || [];
+      dbg.textContent += ' | emergency move';
+    }
+  }
+  aiThinking = false;
+  renderBoard();
+  updateUI();
+  dbg.textContent += ' | done';
+}
+
+// ==================== 悔棋 ====================
+
+function undo() {
+  if (aiThinking) return;
+  if (moveHistory.length === 0) return;
+
+  let undoCount = 1;
+  // PvE模式悔棋逻辑：
+  // - 轮到玩家（AI刚走完）：撤销AI+玩家各一步，回到玩家上次走之前
+  // - 轮到AI（玩家刚走完）：只撤销玩家一步
+  if (gameMode === 'pve' && moveHistory.length >= 2 && currentPlayer === playerColor) {
+    undoCount = 2;
+  }
+
+  for (let i = 0; i < undoCount; i++) {
+    if (moveHistory.length === 0) break;
+    const prev = moveHistory.pop();
+    board = prev.board;
+    currentPlayer = prev.currentPlayer;
+    status = prev.status;
+    lastFrom = prev.lastFrom;
+    lastTo = prev.lastTo;
+    selectedCell = null;
+  }
+
+  // 隐藏胜利弹窗
+  document.getElementById('winOverlay').classList.remove('show');
+  aiThinking = false;
+  renderBoard();
+  updateUI();
+
+  // PvE模式：如果悔棋后轮到AI走，自动触发AI
+  if (gameMode === 'pve' && status === 'playing' && currentPlayer !== playerColor) {
+    scheduleAiMove();
+  }
+}
+
+// ==================== 模式切换 ====================
+
+function setMode(mode) {
+  if (aiThinking) return;
+  gameMode = mode;
+
+  document.getElementById('btnPvP').classList.toggle('active', mode === 'pvp');
+  document.getElementById('btnPvE').classList.toggle('active', mode === 'pve');
+  document.getElementById('btnPvE').classList.toggle('pve-active', mode === 'pve');
+
+  const pveSettings = document.getElementById('pveSettings');
+  pveSettings.classList.toggle('hidden', mode !== 'pve');
+
+  resetGame();
+}
+
+function setPlayerColor(color) {
+  if (aiThinking) return;
+  playerColor = color;
+  document.getElementById('btnFirst').classList.toggle('active', color === 'B');
+  document.getElementById('btnSecond').classList.toggle('active', color === 'W');
+  resetGame();
+}
+
+function setDifficulty(diff) {
+  aiDifficulty = diff;
+  document.getElementById('btnNormal').classList.toggle('active', diff === 'normal');
+  document.getElementById('btnNormal').classList.toggle('danger-active', diff === 'normal');
+  document.getElementById('btnHard').classList.toggle('active', diff === 'hard');
+  document.getElementById('btnHard').classList.toggle('danger-active', diff === 'hard');
+}
+
+function resetGame() {
+  if (aiThinking) return;
+  board = initBoard();
+  currentPlayer = 'B';
+  status = 'playing';
+  selectedCell = null;
+  lastFrom = null;
+  lastTo = null;
+  moveHistory = [];
+  aiThinking = false;
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('thinkingIndicator').classList.remove('show');
+  renderBoard();
+  updateUI();
+
+  // PvE模式：如果AI是先手，自动走
+  if (gameMode === 'pve' && playerColor !== 'B') {
+    scheduleAiMove();
+  }
+}
+
+// ==================== 其他 ====================
+
+function toggleRules() {
+  document.getElementById('rulesPanel').classList.toggle('collapsed');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { selectedCell = null; renderBoard(); }
+  // Ctrl+Z 悔棋
+  if (e.ctrlKey && e.key === 'z') {
+    e.preventDefault();
+    undo();
+  }
+});
+
+// ==================== 启动 ====================
+
+(function() {
+  if (window.innerWidth <= 780) document.getElementById('rulesPanel').classList.add('collapsed');
+  freshStart();
+})();
+
+function freshStart() {
+  board = initBoard();
+  currentPlayer = 'B';
+  status = 'playing';
+  selectedCell = null;
+  lastFrom = null;
+  lastTo = null;
+  moveHistory = [];
+  aiThinking = false;
+  buildCells();
+  renderBoard();
+  updateUI();
+}
+</script>
+</body>
+</html>

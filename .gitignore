@@ -1,0 +1,7 @@
+node_modules/
+apk-build/
+android/
+*.apk
+*.apk.idsig
+package-lock.json
+out/
