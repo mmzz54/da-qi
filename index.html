@@ -202,7 +202,7 @@ h1 { margin-bottom: 2px; font-size: 28px; color: #e0c068; letter-spacing: 4px; }
         <div class="room-btns">
           <button class="room-btn primary" id="btnCreateRoom" onclick="createRoom()">🏠 创建房间</button>
           <span style="color:#666;">或</span>
-          <input class="room-input" id="joinInput" placeholder="房间号" maxlength="6" oninput="this.value=this.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase()">
+          <input class="room-input" id="joinInput" placeholder="房间号" maxlength="3" oninput="this.value=this.value.replace(/\D/g,'')" style="width:60px;">
           <button class="room-btn" id="btnJoinRoom" onclick="joinRoom()">🚪 加入</button>
         </div>
         <div style="margin-top:4px;"><span class="conn-dot offline" id="connDot"></span><span id="connLabel" style="font-size:11px;color:#888;">等待操作…</span></div>
@@ -370,7 +370,7 @@ function createRoom() {
 
 function joinRoom() {
   var code = document.getElementById('joinInput').value.trim().toUpperCase();
-  if (code.length !== 6) { updateConnUI('offline', '请输入6位房间号'); return; }
+  if (code.length !== 3) { updateConnUI('offline', '请输入3位房间号'); return; }
   roomCode = code;
   loadPeerJS(function() {
     document.getElementById('roomIdDisplay').textContent = roomCode;
@@ -385,10 +385,7 @@ function joinRoom() {
 }
 
 function genRoomCode() {
-  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  var code = '';
-  for (var i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
+  return String(Math.floor(100 + Math.random() * 900)); // 100-999
 }
 
 function setupPeer(role) {
@@ -535,7 +532,13 @@ function leaveRoom() {
   document.getElementById('roomInfo').style.display = 'none';
   document.getElementById('joinInput').value = '';
   updateConnUI('offline', '等待操作…');
-  setMode('pvp');
+  gameMode = 'pvp';
+  document.getElementById('btnPvP').classList.add('active');
+  document.getElementById('btnPvE').classList.remove('active', 'pve-active');
+  document.getElementById('btnOnline').classList.remove('active', 'online-active');
+  document.getElementById('pveSettings').classList.add('hidden');
+  document.getElementById('roomPanel').classList.add('hidden');
+  resetGame();
 }
 
 function updateConnUI(state, label) {
@@ -1202,10 +1205,15 @@ function undo() {
 
 function setMode(mode) {
   if (aiThinking) return;
-  // 退出联机房间
+  // 退出联机房间（先清理，避免递归）
   if (gameMode === 'online' && mode !== 'online') {
-    leaveRoom();
-    return; // leaveRoom calls setMode('pvp') which resets
+    if (conn) { try { conn.close(); } catch(e) {} }
+    if (peer) { try { peer.destroy(); } catch(e) {} }
+    conn = null; peer = null; peerReady = false; roomCode = null; onlineColor = null;
+    document.getElementById('roomLobby').style.display = 'block';
+    document.getElementById('roomInfo').style.display = 'none';
+    document.getElementById('joinInput').value = '';
+    updateConnUI('offline', '等待操作…');
   }
   gameMode = mode;
 
