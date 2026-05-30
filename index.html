@@ -486,8 +486,20 @@ function handleOnlineMsg(msg) {
       updateUI();
       break;
 
+    case 'game_start':
+      // 房主发来开局信号，告知房主颜色
+      onlineColor = (msg.hostColor === 'B') ? 'W' : 'B';
+      playerColor = onlineColor;
+      document.getElementById('roomPlayers').innerHTML =
+        '<span class="player-badge B">⚫ 黑方' + (onlineColor === 'B' ? '（你）' : '（房主）') + '</span>' +
+        '<span class="player-badge W">⚪ 白方' + (onlineColor === 'W' ? '（你）' : '（房主）') + '</span>';
+      freshOnlineGame();
+      break;
+
     case 'rematch':
-      onlineColor = msg.color;
+      // 再来一局，颜色已由 requestRematch 交换
+      onlineColor = msg.yourColor;
+      playerColor = onlineColor;
       document.getElementById('roomPlayers').innerHTML =
         '<span class="player-badge B">⚫ 黑方' + (onlineColor === 'B' ? '（你）' : '') + '</span>' +
         '<span class="player-badge W">⚪ 白方' + (onlineColor === 'W' ? '（你）' : '') + '</span>';
@@ -502,10 +514,8 @@ function handleOnlineMsg(msg) {
 function startOnlineGame() {
   playerColor = onlineColor;
   freshOnlineGame();
-  // 房主发送开局信号
-  if (onlineColor === 'B') {
-    sendOnline({ type: 'rematch', color: onlineColor });
-  }
+  // 房主告知加入者：房主是黑色
+  sendOnline({ type: 'game_start', hostColor: onlineColor });
 }
 
 function freshOnlineGame() {
@@ -518,6 +528,8 @@ function freshOnlineGame() {
   moveHistory = [];
   aiThinking = false;
   document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('btnRematch').style.display = 'none';
+  document.getElementById('debugStatus').textContent = '';
   renderBoard();
   updateUI();
 }
@@ -555,7 +567,8 @@ function requestRematch() {
   // 交换颜色
   onlineColor = onlineColor === 'B' ? 'W' : 'B';
   playerColor = onlineColor;
-  sendOnline({ type: 'rematch', color: onlineColor === 'B' ? 'W' : 'B' });
+  // 告知对手他新的颜色
+  sendOnline({ type: 'rematch', yourColor: onlineColor === 'B' ? 'W' : 'B' });
   freshOnlineGame();
 }
 
