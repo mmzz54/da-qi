@@ -815,18 +815,24 @@ function getBestMove(aiColor) {
   if (moves.length === 0) return null;
   if (moves.length === 1) return moves[0];
 
+  // 困难AI：用智能选招（含避重复、劣势不避、次优替代）
+  if (aiDifficulty === 'hard') {
+    return smartPick(moves, aiColor, true);
+  }
+
+  // 普通AI：简单深度搜索 + 随机噪声
   moves = sortMoves(board, moves, aiColor);
-  var depth = aiDifficulty === 'hard' ? 6 : 3;
+  var depth = 3;
   var bestMove = moves[0];
   var bestScore = -Infinity;
   var t0 = Date.now();
-  var limit = 2500; // 2.5 秒超时
+  var limit = 2000;
 
   for (var i = 0; i < moves.length; i++) {
     if (Date.now() - t0 > limit) break;
     var nb = simulateMove(board, moves[i].from, moves[i].to, aiColor).board;
     var score = aiSearch(nb, depth - 1, -Infinity, Infinity, false, aiColor);
-    if (aiDifficulty === 'normal') score += (Math.random() - 0.5) * 100;
+    score += (Math.random() - 0.5) * 100;
     if (score > bestScore) { bestScore = score; bestMove = moves[i]; }
   }
   return bestMove;
@@ -862,47 +868,48 @@ function checkDraw() {
 
 // ==================== 提示功能 ====================
 
-// 提示智能选招：避重复3次后变招，次优替代
-function getHintMove(playerColor) {
-  var moves = getSimulatedLegalMoves(board, playerColor);
+// 智能选招（共享）：避重复 + 劣势不避 + 次优替代
+function smartPick(moves, color, avoidRepeat) {
   if (moves.length === 0) return null;
   if (moves.length === 1) return moves[0];
 
   // 评估所有走法
   var scored = [];
-  var savedDiff = aiDifficulty;
-  aiDifficulty = 'hard';
   for (var i = 0; i < moves.length; i++) {
-    var result = simulateMove(board, moves[i].from, moves[i].to, playerColor);
+    var result = simulateMove(board, moves[i].from, moves[i].to, color);
     var nb = result.board;
-    var score = aiSearch(nb, 5, -Infinity, Infinity, false, playerColor);
+    var score = aiSearch(nb, 5, -Infinity, Infinity, false, color);
     var key = boardKeySim(nb);
     var rc = positionCount[key] || 0;
     scored.push({ move: moves[i], score: score, repeatCount: rc });
   }
-  aiDifficulty = savedDiff;
-
-  // 按分数从高到低排
   scored.sort(function(a, b) { return b.score - a.score; });
 
   var best = scored[0];
+  if (!avoidRepeat) return best.move;
 
-  // 最优解导致局面已重复3次 → 选次优不重复的
+  // 劣势时（棋子比对方少）：不避重复，等对方变招
+  var myCnt = countPieces(color);
+  var enCnt = countPieces(color === 'B' ? 'W' : 'B');
+  if (myCnt < enCnt) return best.move;
+
+  // 优势或均势：最优解重复3次 → 选次优不重复的
   if (best.repeatCount >= 3) {
     for (var j = 1; j < scored.length; j++) {
-      if (scored[j].repeatCount < 3) {
-        return scored[j].move; // 次优不重复走法
-      }
+      if (scored[j].repeatCount < 3) return scored[j].move;
     }
-    // 所有走法都重复3+次：第3次允许再走一次（变第4次）
-    if (best.repeatCount === 3) {
-      return best.move;
-    }
+    // 所有走法都重复3+次：第3次允许再走一次
+    if (best.repeatCount === 3) return best.move;
     // 第4次：强制走次优
     if (scored.length > 1) return scored[1].move;
   }
 
   return best.move;
+}
+
+// 提示智能选招
+function getHintMove(playerColor) {
+  return smartPick(getSimulatedLegalMoves(board, playerColor), playerColor, true);
 }
 
 function showHint() {
