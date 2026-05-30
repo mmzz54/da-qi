@@ -842,6 +842,14 @@ function boardKey() {
   return s;
 }
 
+function boardKeySim(b) {
+  var s = '';
+  for (var y = 0; y < 4; y++)
+    for (var x = 0; x < 4; x++)
+      s += b[y][x] || '.';
+  return s;
+}
+
 function checkDraw() {
   var key = boardKey();
   positionCount[key] = (positionCount[key] || 0) + 1;
@@ -854,17 +862,57 @@ function checkDraw() {
 
 // ==================== 提示功能 ====================
 
+// 提示智能选招：避重复3次后变招，次优替代
+function getHintMove(playerColor) {
+  var moves = getSimulatedLegalMoves(board, playerColor);
+  if (moves.length === 0) return null;
+  if (moves.length === 1) return moves[0];
+
+  // 评估所有走法
+  var scored = [];
+  var savedDiff = aiDifficulty;
+  aiDifficulty = 'hard';
+  for (var i = 0; i < moves.length; i++) {
+    var result = simulateMove(board, moves[i].from, moves[i].to, playerColor);
+    var nb = result.board;
+    var score = aiSearch(nb, 5, -Infinity, Infinity, false, playerColor);
+    var key = boardKeySim(nb);
+    var rc = positionCount[key] || 0;
+    scored.push({ move: moves[i], score: score, repeatCount: rc });
+  }
+  aiDifficulty = savedDiff;
+
+  // 按分数从高到低排
+  scored.sort(function(a, b) { return b.score - a.score; });
+
+  var best = scored[0];
+
+  // 最优解导致局面已重复3次 → 选次优不重复的
+  if (best.repeatCount >= 3) {
+    for (var j = 1; j < scored.length; j++) {
+      if (scored[j].repeatCount < 3) {
+        return scored[j].move; // 次优不重复走法
+      }
+    }
+    // 所有走法都重复3+次：第3次允许再走一次（变第4次）
+    if (best.repeatCount === 3) {
+      return best.move;
+    }
+    // 第4次：强制走次优
+    if (scored.length > 1) return scored[1].move;
+  }
+
+  return best.move;
+}
+
 function showHint() {
   if (gameMode !== 'pve' || aiThinking || status !== 'playing' || currentPlayer !== playerColor) return;
   aiThinking = true;
   updateUI();
   renderBoard();
-  var savedDiff = aiDifficulty;
   setTimeout(function() {
     try {
-      aiDifficulty = 'hard'; // 提示始终用困难AI级别
-      var bestMove = getBestMove(currentPlayer);
-      aiDifficulty = savedDiff;
+      var bestMove = getHintMove(currentPlayer);
       if (bestMove) {
         executeMove(bestMove.from[0], bestMove.from[1], bestMove.to[0], bestMove.to[1]);
         lastFrom = { x: bestMove.from[0], y: bestMove.from[1] };
